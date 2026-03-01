@@ -74,54 +74,45 @@
       color: #333;
     }
 
-    /* カレンダー全体 */
+    /* カレンダー全体（格子） */
     .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    border: 2px solid #ffb6c6;   /* 外枠 */
-    border-collapse: collapse;
+    border: 2px solid #ffb6c6;
     }
 
-    /* カレンダーのマス（格子状） */
     .calendar-grid div {
-    border: 1px solid #ffb6c6;   /* 格子の線 */
+    border: 1px solid #ffb6c6;
     background: #fff;
     font-size: 22px;
     font-weight: 600;
-    height: 120px;               /* ← 縦を大きく固定（崩れない） */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    padding-top: 8px;
+    height: 150px;
     position: relative;
+    padding: 6px;
     box-sizing: border-box;
+    overflow: hidden;
     }
 
     /* 曜日 */
     .weekday {
     background: #ffe3ea;
     font-weight: 700;
-    border: 1px solid #ffb6c6;
-    height: 60px;                /* 曜日だけ少し低く */
-    font-size: 20px;
+    height: 60px;
     display: flex;
     justify-content: center;
     align-items: center;
     }
 
-    /* 予定表示（下に固定） */
+    /* 予定（枠いっぱいの横長帯） */
     .calendar-event {
-    font-size: 12px;
+    position: absolute;
+    left: 4px;
+    right: 4px;
     background: #ff7b9c;
     color: white;
-    padding: 3px 6px;
+    padding: 4px 6px;
     border-radius: 6px;
-    position: absolute;
-    bottom: 6px;
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: 90%;
+    font-size: 14px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -204,6 +195,13 @@
       border-radius: 6px;
       cursor: pointer;
     }
+
+    .empty-cell {
+    border: none !important;
+    background: transparent !important;
+    height: 150px; /* 高さは維持して格子を崩さない */
+    }
+
   </style>
 </head>
 
@@ -298,29 +296,43 @@
       const firstDay = new Date(year, month, 1).getDay();
       const lastDate = new Date(year, month + 1, 0).getDate();
 
-      for (let i = 0; i < firstDay; i++) {
-        grid.appendChild(document.createElement("div"));
-      }
+    for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement("div");
+    empty.className = "empty-cell";
+    grid.appendChild(empty);
+    }
 
-      for (let d = 1; d <= lastDate; d++) {
-        const div = document.createElement("div");
-        div.textContent = d;
+    for (let d = 1; d <= lastDate; d++) {
+  const div = document.createElement("div");
 
-        const dateString =
-            `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+  // 日付（左上に表示）
+  const dayLabel = document.createElement("span");
+  dayLabel.textContent = d;
+  dayLabel.style.fontSize = "22px";
+  dayLabel.style.fontWeight = "700";
+  div.appendChild(dayLabel);
 
-        div.onclick = () => openDateMenu(dateString);
+  const dateString =
+    `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 
-        // 予定がある日なら表示
-        if (schedules[dateString] && schedules[dateString].length > 0) {
-            const eventDiv = document.createElement("div");
-            eventDiv.className = "calendar-event";
-            eventDiv.textContent = schedules[dateString][0].title;
-            div.appendChild(eventDiv);
-        }
+  div.onclick = () => openDateMenu(dateString);
 
-        grid.appendChild(div);
-        }
+  // ★予定を複数表示（枠いっぱいの横長帯）
+  if (schedules[dateString] && schedules[dateString].length > 0) {
+    schedules[dateString].forEach((item, index) => {
+      const eventDiv = document.createElement("div");
+      eventDiv.className = "calendar-event";
+      eventDiv.textContent = item.title;
+
+      // 予定を縦に積む（帯の位置）
+      eventDiv.style.top = `${30 + index * 28}px`;
+
+      div.appendChild(eventDiv);
+    });
+  }
+
+  grid.appendChild(div);
+}
 
     }
 
